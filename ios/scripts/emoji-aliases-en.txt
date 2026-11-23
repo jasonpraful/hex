@@ -104,6 +104,7 @@ hi	👋 😊
 hey	👋 😊
 bye	👋 😘
 goodbye	👋 😢
+wave	👋 🌊
 morning	☀️ ☕ 🌅
 night	🌙 😴 🌃
 tonight	🌙 🌃
@@ -132,6 +133,8 @@ trip	✈️ 🧳 🗺️
 vacation	🏖️ ✈️ 🌴 ☀️
 holiday	🏖️ ✈️ 🎄 🎉
 beach	🏖️ 🌊 ☀️ 🏝️
+ocean	🌊 🐳 🏝️
+sea	🌊 🐳 ⛵
 pool	🏊 ☀️ 💦
 swim	🏊 🌊
 summer	☀️ 🏖️ 😎

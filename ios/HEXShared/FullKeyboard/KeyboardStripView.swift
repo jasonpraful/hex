@@ -8,7 +8,9 @@ import UIKit
 /// line, 25 pt below the keyboard's top edge (`KeyboardMetrics.stripTextCenter`). Before it was
 /// measured (iOS 18) it is the bar from its pill's top down (38 pt), with a small chip around a
 /// word instead of the capsule. The centred
-/// `Undo dictation` chip or a status message replaces the slots when needed.
+/// `Undo dictation` chip or a status message replaces the slots when needed. Two words and
+/// two emoji (Settings › Experiments › Emoji while typing) split the last slot in two, one
+/// emoji each, as Apple's bar does for the word being typed (`splitsLastSlot`).
 @MainActor
 final class KeyboardStripView: UIView {
     var palette = FullKeyboardPalette(isDark: false) { didSet { if palette != oldValue { applyPalette() } } }
@@ -79,7 +81,8 @@ final class KeyboardStripView: UIView {
 
     private let statusLabel = UILabel()
     private let undoChip = UIButton(type: .custom)
-    private let slotButtons: [SlotButton] = [SlotButton(), SlotButton(), SlotButton()]
+    /// The three slots, and a fourth that only the last slot's second half uses (`splitsLastSlot`).
+    private let slotButtons: [SlotButton] = [SlotButton(), SlotButton(), SlotButton(), SlotButton()]
     private var currentSuggestions: [KeyboardSuggestion] = []
     private var showsUndo = false
     private var statusText: String?
@@ -276,10 +279,17 @@ final class KeyboardStripView: UIView {
     }
 
     /// Which slot shows each suggestion: in order, except a lone emoji, swiped word or reading
-    /// of one, which takes the centre. A revert keeps the left slot.
+    /// of one, which takes the centre. A revert keeps the left slot. Two words and two emoji
+    /// take all four (`splitsLastSlot`).
     static func slots(for suggestions: [KeyboardSuggestion]) -> [Int] {
         if suggestions.count == 1, ![.keepLiteral, .secondary, .revert].contains(suggestions[0].kind) { return [1] }
-        return Array(suggestions.indices.prefix(3))
+        return Array(suggestions.indices.prefix(splitsLastSlot(suggestions) ? 4 : 3))
+    }
+
+    /// Two words, then two emoji: the last slot splits into two halves, an emoji in each, as
+    /// Apple's bar shows the emoji for the word being typed (`"wave"`, waves, 👋, 🌊).
+    static func splitsLastSlot(_ suggestions: [KeyboardSuggestion]) -> Bool {
+        suggestions.count == 4 && suggestions[2].kind == .emoji && suggestions[3].kind == .emoji
     }
 
     /// Clipboard chips replace the empty strip; suggestions and status win.
@@ -420,10 +430,27 @@ final class KeyboardStripView: UIView {
         return super.point(inside: point, with: event)
     }
 
+    /// Four frames, one per slot button: the three slots and an empty fourth at the last one's
+    /// end, or, while it splits (`splitsLastSlot`), the last slot's two halves.
     private var currentSlotFrames: [CGRect] {
-        if let slotFrames, slotFrames.count == 3 { return slotFrames }
-        let slotW = bounds.width / 3
-        return (0..<3).map { CGRect(x: CGFloat($0) * slotW, y: 0, width: slotW, height: bounds.height) }
+        let thirds: [CGRect]
+        if let slotFrames, slotFrames.count == 3 {
+            thirds = slotFrames
+        } else {
+            let slotW = bounds.width / 3
+            thirds = (0..<3).map { CGRect(x: CGFloat($0) * slotW, y: 0, width: slotW, height: bounds.height) }
+        }
+        let last = thirds[2]
+        guard Self.splitsLastSlot(currentSuggestions) else {
+            return thirds + [CGRect(x: last.maxX, y: last.minY, width: 0, height: last.height)]
+        }
+        let half = (last.width / 2).rounded()
+        return [
+            thirds[0],
+            thirds[1],
+            CGRect(x: last.minX, y: last.minY, width: half, height: last.height),
+            CGRect(x: last.minX + half, y: last.minY, width: last.width - half, height: last.height),
+        ]
     }
 
     override func draw(_ rect: CGRect) {
@@ -443,12 +470,14 @@ final class KeyboardStripView: UIView {
         let filled = Set(slots)
         // Apple's bar hides both dividers beside its bubble (a pending autocorrection or a revert).
         let bubbled: Set<Int> = appleBar ? Set(zip(currentSuggestions, slots).filter { $0.0.willAutoReplace || $0.0.kind == .revert }.map(\.1)) : []
-        for (index, slot) in currentSlotFrames.prefix(2).enumerated()
+        let frames = currentSlotFrames
+        let lastSlot = Self.splitsLastSlot(currentSuggestions) ? 3 : 2
+        for (index, slot) in frames.prefix(lastSlot).enumerated()
         where slot.maxX < bounds.width - 1 && filled.contains(index) && filled.contains(index + 1) && !(reverting && index == 0)
             && !bubbled.contains(index) && !bubbled.contains(index + 1) {
             UIRectFill(CGRect(x: slot.maxX - 1, y: y, width: 1, height: lineH))
         }
-        let besideHex = hexOnLeading ? 0 : 2
+        let besideHex = hexOnLeading ? 0 : lastSlot
         if dividerBesideHex, filled.contains(besideHex), !bubbled.contains(besideHex) {
             UIRectFill(CGRect(x: hexOnLeading ? 0 : bounds.width - 1, y: y, width: 1, height: lineH))
         }

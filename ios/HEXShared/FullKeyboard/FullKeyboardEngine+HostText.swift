@@ -163,16 +163,32 @@ extension FullKeyboardEngine {
     /// around it. False when the host no longer shows the token, so the key types as usual.
     @discardableResult
     private func replaceWithEmojiShortcode(_ emoji: String, token: String) -> Bool {
-        guard let before = textBefore, before.hasSuffix(token) else { return false }
+        replaceTypedText(token, with: emoji, source: "emoji_shortcode")
+    }
+
+    // MARK: - Emoji while typing (Settings › Experiments; EmojiSuggester.forTypedWord)
+
+    /// A chip's emoji in place of the word being typed, then a space, as Apple's bar puts it
+    /// ("hello" → "🙋 "; black box, iOS 27). No autocorrect runs on the word it replaces.
+    /// False when the host no longer shows `word` before the cursor.
+    @discardableResult
+    func replaceTypedWord(_ word: String, withEmoji emoji: String) -> Bool {
+        replaceTypedText(word, with: emoji + " ", source: "emoji_typed_word")
+    }
+
+    /// Takes `typed` back from before the cursor and types `text` in its place. False, changing
+    /// nothing, when the host no longer shows `typed` there.
+    private func replaceTypedText(_ typed: String, with text: String, source: String) -> Bool {
+        guard !typed.isEmpty, let before = textBefore, before.hasSuffix(typed) else { return false }
         typingLog?.edit("delete", [
-            TypingLogField("deleted", .string(token)),
-            TypingLogField("src", .string("emoji_shortcode")),
+            TypingLogField("deleted", .string(typed)),
+            TypingLogField("src", .string(source)),
         ])
         forgetTypingContext()
-        for _ in 0..<token.count {
+        for _ in 0..<typed.count {
             target.deleteBackward()
         }
-        insert(emoji, source: "emoji_shortcode")
+        insert(text, source: source)
         return true
     }
 }

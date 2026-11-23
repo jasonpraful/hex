@@ -120,6 +120,10 @@ final class FullKeyboardView: UIView {
     /// Settings › Experiments › Emoji shortcodes, cached by `syncEmojiShortcodes`: the strip
     /// offers emoji for a ":name" and the closing ":" completes one while it is on.
     private(set) var emojiShortcodesEnabled = false
+    /// Settings › Experiments › Emoji while typing, cached by `syncEmojiShortcodes`: the strip
+    /// offers the emoji for the word being typed (`emojiForTypedWord`), and the finished word's
+    /// emoji after a space stays away, as on Apple's bar.
+    private(set) var emojiWhileTypingEnabled = false
     /// Settings › Experiments › Keyboard themes: Automatic keeps iOS's glass; another theme
     /// paints the keyboard's own colours. Read again by `syncSettings`, which rebuilds the
     /// palette when it changes.
@@ -182,6 +186,7 @@ final class FullKeyboardView: UIView {
             self.keyFeedback()
             if suggestion.kind == .emoji {
                 if self.acceptEmojiShortcode(suggestion) { return }
+                if self.acceptEmojiForTypedWord(suggestion) { return }
                 self.recordEmojiUse(suggestion.replacement)
             }
             self.engine.acceptSuggestion(suggestion)
@@ -550,6 +555,7 @@ final class FullKeyboardView: UIView {
     /// colon exactly as it did before the experiment.
     private func syncEmojiShortcodes() {
         emojiShortcodesEnabled = FullKeyboardSettings().emojiShortcodes
+        emojiWhileTypingEnabled = FullKeyboardSettings().emojiWhileTyping
         engine.emojiShortcode = emojiShortcodesEnabled
             ? { [weak self] before in self?.emojiShortcodeReplacement(before: before) }
             : nil
@@ -929,10 +935,14 @@ final class FullKeyboardView: UIView {
         var suggestions = engine.suggestions
         if let shortcodes = emojiShortcodeSuggestions() {
             suggestions = shortcodes
+        } else if let typed = emojiForTypedWord() {
+            // Apple's bar for the word being typed: two of its words, then its emoji in the
+            // last third (two split it, `KeyboardStripView.splitsLastSlot`).
+            suggestions = Array(suggestions.prefix(2)) + typed
         } else if suggestions.isEmpty || suggestions.first?.kind == .nextWord {
             if lastDictation != nil || status != nil || clipboardOffer != nil {
                 suggestions = []
-            } else {
+            } else if !emojiWhileTypingEnabled {
                 let emoji = emojiForFinishedWord()
                 if !emoji.isEmpty {
                     // The finished word's emoji, with next words beside it so every slot fills:

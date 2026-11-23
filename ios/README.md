@@ -1822,6 +1822,25 @@ never at a launch by itself.
   emoji-test.txt 18.0 and CLDR 49, and no copy is checked in). Unit tests only
   (`EmojiShortcodeTests`): no CI compiles the iOS targets, and no physical iPhone run checks
   it.
+- **Emoji while typing (full keyboard, Settings › Experiments):** Off by default
+  (`experiments.emojiWhileTyping`, App Group; without Full Access it reads off). Apple's bar
+  offers emoji for the word being typed, before its space (black box, iOS 27: "Hello" → 👋 🙋,
+  "wave" → 👋 🌊, "wav" none), and a tap puts the emoji and a space in the word's place. With
+  this on, in the same fields as Emoji shortcodes (the emoji key shows, autocorrect on, not
+  secure, not the emoji search, and not while a swipe's readings hold the strip), the word
+  right before the cursor (`AutocorrectEngine.currentToken`: letters and inner apostrophes,
+  not attached to "@", "#" or a digit) offers up to two emoji, one per family, that score at
+  least 0.7 for it in the index (`EmojiSuggester.forTypedWord`; an emoji's name or one of
+  Hex's chat words scores 1 to 1.2, a keyword only a few emoji share 0.75, so "pizza" offers
+  🍕 alone and "face" none). Whole words only, and none for a stopword. The strip keeps the
+  first two of its words and puts the emoji in the last third; two emoji split it in half,
+  a divider between them, as Apple's bar does (`KeyboardStripView.splitsLastSlot`). A tap
+  takes the word back and types the emoji (with its skin tone) and a space, counted like one
+  from the panel (`FullKeyboardEngine.replaceTypedWord`); a chip that no longer matches the
+  word before the cursor is not replaced. After a space the finished word's emoji stays away
+  while it is on, as Apple's bar offers next words there. Shortcodes win over it. Unit tests
+  (`EmojiWhileTypingTests`) and a simulator run (iOS 26.3, Reminders): no physical iPhone run
+  checks it yet.
 - **Emoji (Settings › Keyboard › Emoji, for the full keyboard):** On by default (stored as
   `experiments.emoji` from when it was an experiment off by default: unset or true is on,
   false off, so testers who turned it off keep it off). An emoji key
@@ -1851,8 +1870,9 @@ never at a launch by itself.
   a field in the strip, results above it, by name first. Holding an emoji with skin
   tones offers five; the one you pick is typed and kept for that emoji. After a space,
   an empty strip offers the finished word's own emoji ("pizza " → 🍕), never in place
-  of word suggestions. The App Group keeps a use count per emoji that halves every 10
-  days and each emoji's skin tone, no words (`EmojiUsageStore`); Clear emoji history
+  of word suggestions (none while Settings › Experiments › Emoji while typing is on, which
+  offers them before the space instead). The App Group keeps a use count per emoji that
+  halves every 10 days and each emoji's skin tone, no words (`EmojiUsageStore`); Clear emoji history
   empties it. The index is `HEXShared/FullKeyboard/Emoji/emoji-index-<lang>.txt`,
   built by `scripts/build-emoji-data.py` from Unicode's emoji-test.txt 18.0 and CLDR
   49 (Unicode License v3, `LICENSE-Unicode.txt` beside it, which permits commercial
