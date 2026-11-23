@@ -287,6 +287,7 @@ enum SettingsSnapshotFixture {
         keyboard.commaPeriodKeys = on
         keyboard.quickAccents = on
         keyboard.emojiShortcodes = on
+        keyboard.emojiWhileTyping = on
         keyboard.emojiLettersUnderEmojiKey = on
         keyboard.keyboardThemesEnabled = false
         keyboard.keyboardTheme = .automatic

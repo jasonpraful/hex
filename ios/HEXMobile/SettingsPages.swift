@@ -713,6 +713,7 @@ struct ExperimentsSettingsPage: View {
     @State private var commaPeriodKeys = FullKeyboardSettings().commaPeriodKeys
     @State private var quickAccents = FullKeyboardSettings().quickAccents
     @State private var emojiShortcodes = FullKeyboardSettings().emojiShortcodes
+    @State private var emojiWhileTyping = FullKeyboardSettings().emojiWhileTyping
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
     @State private var keyboardTheme = FullKeyboardSettings().keyboardTheme
@@ -797,6 +798,9 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: emojiShortcodes) { _, enabled in
                 FullKeyboardSettings().emojiShortcodes = enabled
+            }
+            .onChange(of: emojiWhileTyping) { _, enabled in
+                FullKeyboardSettings().emojiWhileTyping = enabled
             }
             .onChange(of: emojiLettersUnderEmojiKey) { _, enabled in
                 FullKeyboardSettings().emojiLettersUnderEmojiKey = enabled
@@ -966,6 +970,15 @@ struct ExperimentsSettingsPage: View {
 
         SettingsDivider()
 
+        // Off by default: emoji wait for the space after a word, as before.
+        SettingsToggleRow(
+            title: String(localized: "Emoji while typing"),
+            detail: String(localized: "Suggests emoji for the word you're typing, as Apple's keyboard does. Tap one to replace the word."),
+            isOn: $emojiWhileTyping
+        )
+
+        SettingsDivider()
+
         // Off by default: the emoji panel's ABC stays where it always was.
         SettingsToggleRow(
             title: String(localized: "ABC under the emoji key"),
@@ -1073,6 +1086,7 @@ struct ExperimentsSettingsPage: View {
         commaPeriodKeys = FullKeyboardSettings().commaPeriodKeys
         quickAccents = FullKeyboardSettings().quickAccents
         emojiShortcodes = FullKeyboardSettings().emojiShortcodes
+        emojiWhileTyping = FullKeyboardSettings().emojiWhileTyping
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
         keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
         keyboardTheme = FullKeyboardSettings().keyboardTheme

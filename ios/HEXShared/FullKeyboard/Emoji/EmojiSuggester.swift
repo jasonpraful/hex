@@ -172,13 +172,33 @@ nonisolated enum EmojiSuggester {
         guard let before, before.hasSuffix(" ") else { return [] }
         let trimmed = before.dropLast()
         guard trimmed.last?.isLetter == true,
-              let word = EmojiText.words(in: String(trimmed.suffix(40))).last,
-              !library.stopwords.contains(word) else { return [] }
+              let word = EmojiText.words(in: String(trimmed.suffix(40))).last else { return [] }
+        return wordHits(word, library: library, minimumWeight: strongWeight, limit: limit)
+    }
+
+    /// The emoji for the word being typed, before its space, as Apple's bar offers them
+    /// ("wave" → 👋 🌊; black box, iOS 27): the token right before the cursor, as typed (what a
+    /// tap replaces), and at most `limit` of its emoji, one per family. Whole words only ("wav"
+    /// offers none), and nothing for a stopword, a token attached to "@", "#" or a digit, or a
+    /// cursor after a space or punctuation. Keyword matches a few emoji share count too
+    /// (`typingWeight`), not only an emoji's own name.
+    @MainActor static func forTypedWord(_ before: String?, library: EmojiLibrary, limit: Int = 2) -> (token: String, entries: [Int])? {
+        guard let before, before.last?.isLetter == true,
+              let token = AutocorrectEngine.currentToken(in: before),
+              let word = EmojiText.words(in: token).first else { return nil }
+        let entries = wordHits(word, library: library, minimumWeight: typingWeight, limit: limit)
+        return entries.isEmpty ? nil : (token, entries)
+    }
+
+    /// `word`'s emoji that score at least `minimumWeight` (its first form the index knows),
+    /// one per family, at most `limit`. None for a stopword.
+    private static func wordHits(_ word: String, library: EmojiLibrary, minimumWeight: Float, limit: Int) -> [Int] {
+        guard !library.stopwords.contains(word) else { return [] }
         for (form, factor) in forms(of: word, language: library.language) {
             guard let hits = library.hits(forWord: form) else { continue }
             var picked: [Int] = []
             var families: Set<Int32> = []
-            for hit in hits where hit.weight * factor >= strongWeight && picked.count < limit {
+            for hit in hits where hit.weight * factor >= minimumWeight && picked.count < limit {
                 let entry = Int(hit.entry)
                 let family = library.family(of: entry)
                 guard family < 0 || families.insert(family).inserted else { continue }
@@ -191,6 +211,11 @@ nonisolated enum EmojiSuggester {
 
     /// An emoji's one-word name scores 1, a chat word's emoji 0.9 to 1.2.
     static let strongWeight: Float = 0.85
+    /// While a word is typed (`forTypedWord`): a keyword only a few emoji share (0.75, "dog" →
+    /// 🦮) counts too, as Apple's bar offers more than an emoji's own name, but not one many
+    /// share (0.6, "pizza" → 🍄‍🟫), nor a word so common among keywords that each of its emoji
+    /// scores 0.3 or less.
+    static let typingWeight: Float = 0.7
 
     /// The search's results: name matches first, your emoji and the everyday ones first among
     /// equals.

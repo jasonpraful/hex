@@ -101,6 +101,7 @@ struct FullKeyboardSettings {
         static let commaPeriodKeys = "experiments.commaPeriodKeys"
         static let quickAccents = "experiments.quickAccents"
         static let emojiShortcodes = "experiments.emojiShortcodes"
+        static let emojiWhileTyping = "experiments.emojiWhileTyping"
     }
 
     private let defaults: UserDefaults?
@@ -370,6 +371,17 @@ struct FullKeyboardSettings {
     var emojiShortcodes: Bool {
         get { defaults?.object(forKey: Key.emojiShortcodes) as? Bool ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.emojiShortcodes) }
+    }
+
+    /// Settings › Experiments › Emoji while typing: as on Apple's bar, the strip offers up to
+    /// two emoji for the word being typed, before its space ("wave" → 👋 🌊), beside two of its
+    /// words, and a tap puts the emoji and a space in the word's place. The finished word's
+    /// emoji after a space then stays away, as Apple's bar offers none there. Off by default;
+    /// without Full Access the App Group reads false, which is off. Stored as
+    /// `experiments.emojiWhileTyping`.
+    var emojiWhileTyping: Bool {
+        get { defaults?.object(forKey: Key.emojiWhileTyping) as? Bool ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.emojiWhileTyping) }
     }
 
     /// Settings › Keyboard › Auto-start: when the dictation bar starts dictating by itself.

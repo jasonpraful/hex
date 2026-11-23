@@ -340,6 +340,43 @@ extension FullKeyboardView {
         }
     }
 
+    // MARK: - While typing (Settings › Experiments; EmojiSuggester.forTypedWord)
+
+    /// Up to two emoji for the word being typed, before its space, or nil (the strip shows what
+    /// it always does) when the experiment is off, the field keeps emoji or autocorrect away,
+    /// a swipe's readings hold the strip, or the word has no emoji.
+    func emojiForTypedWord() -> [KeyboardSuggestion]? {
+        guard emojiWhileTypingEnabled, engine.showsEmoji, !routedTarget.isSearching,
+              emojiPanel == nil, allowsEmojiShortcodes,
+              engine.suggestions.first?.kind != .swiped,
+              let library = loadEmojiLibrary(),
+              let typed = EmojiSuggester.forTypedWord(engine.typingContext ?? engine.textBefore, library: library)
+        else { return nil }
+        let usage = makeEmojiUsage()
+        return typed.entries.map { entry in
+            let emoji = emojiText(entry, library: library, usage: usage)
+            return KeyboardSuggestion(displayText: emoji, replacement: emoji, kind: .emoji)
+        }
+    }
+
+    /// A strip emoji was tapped while the word it is for is still before the cursor: the emoji
+    /// and a space go in the word's place, counted like one from the panel. False for another
+    /// emoji (a finished word's, or a chip that no longer matches the word).
+    @discardableResult
+    func acceptEmojiForTypedWord(_ suggestion: KeyboardSuggestion) -> Bool {
+        guard emojiWhileTypingEnabled,
+              let library = loadEmojiLibrary(),
+              let entry = library.entryByEmoji[suggestion.replacement],
+              let typed = EmojiSuggester.forTypedWord(engine.typingContext ?? engine.textBefore, library: library),
+              typed.entries.contains(entry) else { return false }
+        // A host still reporting the text from before the word caught up: nothing changes, and
+        // the tap is swallowed rather than type the emoji after part of the word.
+        if engine.replaceTypedWord(typed.token, withEmoji: suggestion.replacement) {
+            makeEmojiUsage().record(library.entries[entry].emoji)
+        }
+        return true
+    }
+
     // MARK: - Fixtures
 
     /// Fixtures: open the panel, optionally searching `query`.

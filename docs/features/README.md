@@ -2911,10 +2911,10 @@ iOS prototype (`HEXMobile`) -> Record/transcribe/copy and keyboard handoff
 ├── Experiments: Full keyboard, Apple Intelligence cleanup, Custom vocabulary,
 │   Hinglish, Greeklish, Two-language dictation, Adaptive touch, German spatial autocorrect,
 │   Swipe typing in more languages, Korean keyboard (두벌식), Dvorak punctuation keys, Comma
-│   and period keys, Quick accents, Emoji shortcodes, ABC under the emoji key, Keyboard
-│   themes (Black, White, Navy, Forest, Ember), Two-thumb selection, Delete swiped words
-│   letter by letter, Hide word suggestions, Join the keyboard when unfolded, Learn each
-│   language separately
+│   and period keys, Quick accents, Emoji shortcodes, Emoji while typing, ABC under the
+│   emoji key, Keyboard themes (Black, White, Navy, Forest, Ember), Two-thumb selection,
+│   Delete swiped words letter by letter, Hide word suggestions, Join the keyboard when
+│   unfolded, Learn each language separately
 ├── Full keyboard's languages (Settings › Keyboard › Languages, with Full chosen): one or
 │   more layouts, the space bar names the current one and a slide switches letters, accents
 │   and autocorrect, and the input mode reports the language typing
@@ -3090,6 +3090,16 @@ iOS prototype (`HEXMobile`) -> Record/transcribe/copy and keyboard handoff
 │   make from the repo alone (Unicode's emoji-test.txt 18.0 and CLDR 49 are not in the repo).
 │   Unit tests only (`EmojiShortcodeTests`): no CI compiles the iOS targets, and no physical
 │   iPhone run checks it
+├── Emoji while typing (off by default, `experiments.emojiWhileTyping`): as Apple's bar does,
+│   the word right before the cursor, before its space, offers up to two emoji that score at
+│   least 0.7 for it in the bundled index ("wave" → 👋 🌊, "Hello" → 👋 😊, "wav" none;
+│   `EmojiSuggester.forTypedWord`), in the same fields as Emoji shortcodes and not while a
+│   swipe's readings hold the strip. The strip keeps two of its words and puts the emoji in
+│   the last third, split in half for two (`KeyboardStripView.splitsLastSlot`). A tap takes
+│   the word back and types the emoji and a space (`FullKeyboardEngine.replaceTypedWord`),
+│   counted like one from the panel. While it is on, the finished word's emoji after a space
+│   stays away. The setting is in the App Group, and without Full Access it reads off. Unit
+│   tests (`EmojiWhileTypingTests`) and a simulator run; no physical iPhone run checks it
 ├── Learn each language separately (off by default, `experiments.learnPerLanguage`):
 │   every typing correction and dictation fix is tagged with the language it was typed
 │   or dictated in; on, the keys learn a language's typos and rejections from that

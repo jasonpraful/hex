@@ -1228,6 +1228,26 @@
         }
       }
     },
+    "Emoji while typing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入时建议表情符号"
+          }
+        }
+      }
+    },
+    "Suggests emoji for the word you're typing, as Apple's keyboard does. Tap one to replace the word." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "像 Apple 键盘一样，为正在输入的词建议表情符号。轻点一个即可替换该词。"
+          }
+        }
+      }
+    },
     "Edited" : {
       "localizations" : {
         "zh-Hans" : {
